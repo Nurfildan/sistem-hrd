@@ -12,7 +12,8 @@ use App\Http\Controllers\{
     PenggajianController,
     PotonganController,
     ProfileController,
-    UserController
+    UserController,
+    DashboardController
 };
 
 /*
@@ -30,9 +31,23 @@ Route::get('/', function () {
 | DASHBOARD
 |--------------------------------------------------------------------------
 */
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth'])->name('dashboard');
+
+// Route untuk dashboard - pastikan menggunakan DashboardController
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware('auth')
+    ->name('dashboard');
+
+// Route lainnya...
+Route::middleware('auth')->group(function () {
+    Route::resource('karyawan', KaryawanController::class);
+    Route::resource('absensi', AbsensiController::class);
+    Route::resource('cuti', CutiController::class);
+    Route::resource('departemen', DepartemenController::class);
+    Route::resource('jabatan', JabatanController::class);
+});
 
 
 /*
@@ -88,6 +103,7 @@ Route::middleware(['auth', 'role:HRD'])->group(function () {
     Route::get('/penggajian', [PenggajianController::class, 'index'])->name('penggajian.index');
     Route::get('/penggajian/create', [PenggajianController::class, 'create'])->name('penggajian.create');
     Route::post('/penggajian/store', [PenggajianController::class, 'store'])->name('penggajian.store');
+    Route::get('/penggajian/show/{id}', [PenggajianController::class, 'show'])->name('penggajian.show');
 
     // Potongan
     Route::resource('potongan', PotonganController::class);

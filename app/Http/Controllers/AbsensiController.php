@@ -416,4 +416,5 @@ class AbsensiController extends Controller
         return redirect()->route('absensi.index')
             ->with('success', 'Data absensi berhasil ditambahkan');
     }
+    
 }

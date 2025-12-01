@@ -1,0 +1,52 @@
+# Logs & system
+*.log
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.backup
+.env.production
+
+# IDE / Editor
+.phpactor.json
+.phpunit.result.cache
+/.fleet
+/.idea
+/.nova
+/.phpunit.cache
+/.vscode
+/.zed
+
+# Auth key
+auth.json
+
+# Node
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Public build
+/public/build
+/public/hot
+/public/storage
+
+# Storage (ignore everything except required)
+/storage/*.key
+/storage/pail
+/storage/logs
+/storage/framework/cache/data/*
+/storage/framework/sessions
+/storage/framework/views
+/storage/framework/testing
+
+# Bootstrap cache
+/bootstrap/cache
+
+# Vendor
+/vendor
+
+# Homestead
+Homestead.json
+Homestead.yaml

@@ -97,7 +97,11 @@ Route::middleware(['auth', 'role:HRD'])->group(function () {
 
     // Shift
     Route::resource('shift', ShiftController::class);
-    Route::resource('karyawan_shift', KaryawanShiftController::class);
+    Route::get('karyawan_shift', [KaryawanShiftController::class, 'index'])->name('karyawan_shift.index');
+    Route::post('karyawan_shift/store', [KaryawanShiftController::class, 'store'])->name('karyawan_shift.store');
+    Route::post('karyawan_shift/bulk-store', [KaryawanShiftController::class, 'bulkStore'])->name('karyawan_shift.bulkStore');
+    Route::delete('karyawan_shift/destroy', [KaryawanShiftController::class, 'destroy'])->name('karyawan_shift.destroy');
+    Route::get('karyawan_shift/schedule', [KaryawanShiftController::class, 'getSchedule'])->name('karyawan_shift.getSchedule');
 
     // Penggajian
     Route::get('/penggajian', [PenggajianController::class, 'index'])->name('penggajian.index');

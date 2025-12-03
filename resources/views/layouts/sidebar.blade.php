@@ -151,7 +151,7 @@
         </li>
 
         <li class="nav-item {{ request()->is('profile*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('profile.edit') }}">
+            <a class="nav-link" href="{{ route('profile.index') }}">
                 <i class="fas fa-fw fa-user"></i>
                 <span>Profilku</span>
             </a>

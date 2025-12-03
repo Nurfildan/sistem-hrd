@@ -2,44 +2,72 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
-    public function edit(Request $request): View
+    // Halaman untuk MENAMPILKAN profil (READ ONLY)
+    public function index()
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        $user = Auth::user();
+        $karyawan = $user->karyawan;
+        
+        if (!$karyawan) {
+            return redirect()->back()->with('error', 'Data karyawan tidak ditemukan');
+        }
+        
+        return view('profile.index', compact('karyawan'));
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    // Halaman untuk FORM EDIT profil
+    public function edit()
     {
-        $request->user()->fill($request->validated());
+        $user = Auth::user();
+        $karyawan = $user->karyawan;
+        
+        if (!$karyawan) {
+            return redirect()->back()->with('error', 'Data karyawan tidak ditemukan');
+        }
+        
+        return view('profile.edit', compact('karyawan'));
+    }
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+    // Proses UPDATE profil
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+        $karyawan = $user->karyawan;
+
+        $request->validate([
+            'nama' => 'required',
+            'no_hp' => 'nullable',
+            'email' => 'nullable|email',
+            'alamat' => 'nullable',
+            'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
+        ]);
+
+        $data = $request->only(['nama', 'no_hp', 'email', 'alamat']);
+
+        // Upload foto baru
+        if ($request->hasFile('foto')) {
+            if ($karyawan->foto && file_exists(public_path('foto_karyawan/' . $karyawan->foto))) {
+                unlink(public_path('foto_karyawan/' . $karyawan->foto));
+            }
+
+            $file = $request->file('foto');
+            $namaFile = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('foto_karyawan'), $namaFile);
+            $data['foto'] = $namaFile;
         }
 
-        $request->user()->save();
+        $karyawan->update($data);
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return redirect()->route('profile.index')->with('success', 'Profile berhasil diperbarui');
     }
 
-    /**
-     * Delete the user's account.
-     */
+    // Delete account (opsional)
     public function destroy(Request $request): RedirectResponse
     {
         $request->validateWithBag('userDeletion', [
@@ -55,6 +83,6 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/');
+        return redirect('/');
     }
 }

@@ -6,7 +6,7 @@
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-edit"></i> Edit Potongan
+            <i class="fas fa-plus-circle"></i> Tambah Potongan
         </h1>
         <a href="{{ route('potongan.index') }}" class="btn btn-secondary btn-icon-split shadow-sm">
             <span class="icon text-white-50">
@@ -19,13 +19,12 @@
     <!-- Form Card -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">Form Edit Potongan</h6>
+            <h6 class="m-0 font-weight-bold text-primary">Form Tambah Potongan</h6>
         </div>
 
         <div class="card-body">
-            <form action="{{ route('potongan.update', $potongan->id) }}" method="POST">
+            <form action="{{ route('potongan.store') }}" method="POST">
                 @csrf
-                @method('PUT')
 
                 <!-- Karyawan -->
                 <div class="form-group">
@@ -34,8 +33,7 @@
                             class="form-control @error('karyawan_id') is-invalid @enderror" required>
                         <option value="">-- Pilih Karyawan --</option>
                         @foreach($karyawan as $k)
-                            <option value="{{ $k->id }}" 
-                                {{ old('karyawan_id', $potongan->karyawan_id) == $k->id ? 'selected' : '' }}>
+                            <option value="{{ $k->id }}" {{ old('karyawan_id') == $k->id ? 'selected' : '' }}>
                                 {{ $k->nama }}
                             </option>
                         @endforeach
@@ -50,7 +48,7 @@
                     <label for="nama_potongan">Nama Potongan <span class="text-danger">*</span></label>
                     <input type="text" name="nama_potongan" id="nama_potongan" 
                            class="form-control @error('nama_potongan') is-invalid @enderror" 
-                           value="{{ old('nama_potongan', $potongan->nama_potongan) }}" 
+                           value="{{ old('nama_potongan') }}" 
                            placeholder="Contoh: Potongan Terlambat" required>
                     @error('nama_potongan')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -67,8 +65,7 @@
                         <input type="text" id="jumlah_display" 
                                class="form-control @error('jumlah') is-invalid @enderror" 
                                placeholder="50.000" required>
-                        <input type="hidden" name="jumlah" id="jumlah" 
-                               value="{{ old('jumlah', $potongan->jumlah) }}">
+                        <input type="hidden" name="jumlah" id="jumlah" value="{{ old('jumlah') }}">
                         @error('jumlah')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -81,7 +78,7 @@
                     <label for="bulan">Bulan <span class="text-danger">*</span></label>
                     <input type="month" name="bulan" id="bulan" 
                            class="form-control @error('bulan') is-invalid @enderror" 
-                           value="{{ old('bulan', $potongan->bulan) }}" required>
+                           value="{{ old('bulan', date('Y-m')) }}" required>
                     <small class="form-text text-muted">Pilih bulan periode potongan</small>
                     @error('bulan')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -90,8 +87,8 @@
 
                 <!-- Buttons -->
                 <div class="form-group mt-4">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save"></i> Update
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Simpan
                     </button>
                     <a href="{{ route('potongan.index') }}" class="btn btn-secondary">
                         <i class="fas fa-times"></i> Batal
@@ -181,11 +178,11 @@ document.addEventListener('DOMContentLoaded', function() {
         this.value = formatRupiah(nilai);
     });
 
-    // Set nilai awal dari database
-    const initialValue = jumlahHidden.value;
-    if (initialValue) {
-        jumlahDisplay.value = formatRupiah(initialValue);
-    }
+    // Set nilai awal jika ada old value
+    @if(old('jumlah'))
+        jumlahHidden.value = '{{ old('jumlah') }}';
+        jumlahDisplay.value = formatRupiah('{{ old('jumlah') }}');
+    @endif
 });
 </script>
 @endsection

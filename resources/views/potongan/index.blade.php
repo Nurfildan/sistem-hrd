@@ -9,12 +9,12 @@
             <i class="fas fa-minus-circle"></i> Data Potongan
         </h1>
 
-        <a href="{{ route('potongan.generate', [date('m'), date('Y')]) }}" 
-           class="btn btn-success btn-icon-split shadow-sm">
+        <a href="{{ route('potongan.create') }}" 
+           class="btn btn-primary btn-icon-split shadow-sm">
             <span class="icon text-white-50">
-                <i class="fas fa-calculator"></i>
+                <i class="fas fa-plus"></i>
             </span>
-            <span class="text">Hitung Potongan Bulan Ini</span>
+            <span class="text">Tambah Potongan</span>
         </a>
     </div>
 
@@ -68,12 +68,6 @@
                             <td>{{ $item->bulan }}</td>
 
                             <td class="text-center">
-
-                                <a href="{{ route('potongan.karyawan', $item->karyawan_id) }}" 
-                                   class="btn btn-info btn-sm" data-toggle="tooltip" 
-                                   title="Detail">
-                                    <i class="fas fa-eye"></i>
-                                </a>
 
                                 <a href="{{ route('potongan.edit', $item->id) }}" 
                                    class="btn btn-warning btn-sm" data-toggle="tooltip" 

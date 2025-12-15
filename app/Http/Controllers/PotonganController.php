@@ -17,6 +17,12 @@ class PotonganController extends Controller
         return view('potongan.index', compact('potongan'));
     }
 
+    public function create()
+    {
+        $karyawan = Karyawan::all();
+        return view('potongan.create', compact('karyawan'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -32,7 +38,8 @@ class PotonganController extends Controller
 
     public function edit(Potongan $potongan)
     {
-        return view('potongan.edit', compact('potongan'));
+        $karyawan = Karyawan::all();
+        return view('potongan.edit', compact('potongan', 'karyawan'));
     }
 
     public function update(Request $request, Potongan $potongan)
@@ -58,43 +65,43 @@ class PotonganController extends Controller
         return view('potongan.detail', compact('karyawan'));
     }
 
-    public function generatePotongan($bulan, $tahun)
-    {
-        $karyawans = Karyawan::all();
+    // public function generatePotongan($bulan, $tahun)
+    // {
+    //     $karyawans = Karyawan::all();
 
-        foreach ($karyawans as $karyawan) {
-            $potonganTotal = 0;
+    //     foreach ($karyawans as $karyawan) {
+    //         $potonganTotal = 0;
 
-            // Absensi
-            $absensi = Absensi::where('karyawan_id', $karyawan->id)
-                ->whereMonth('tanggal', $bulan)
-                ->whereYear('tanggal', $tahun)
-                ->get();
+    //         // Absensi
+    //         $absensi = Absensi::where('karyawan_id', $karyawan->id)
+    //             ->whereMonth('tanggal', $bulan)
+    //             ->whereYear('tanggal', $tahun)
+    //             ->get();
 
-            foreach ($absensi as $a) {
-                if ($a->status == 'Alpa') $potonganTotal += 50000;
-                if ($a->status == 'Cuti') $potonganTotal += 100000;
-            }
+    //         foreach ($absensi as $a) {
+    //             if ($a->status == 'Alpa') $potonganTotal += 50000;
+    //             if ($a->status == 'Cuti') $potonganTotal += 100000;
+    //         }
 
-            // Cuti resmi disetujui
-            $cutis = Cuti::where('karyawan_id', $karyawan->id)
-                ->where('status', 'Disetujui')
-                ->get();
+    //         // Cuti resmi disetujui
+    //         $cutis = Cuti::where('karyawan_id', $karyawan->id)
+    //             ->where('status', 'Disetujui')
+    //             ->get();
 
-            foreach ($cutis as $c) {
-                $start = Carbon::parse($c->tanggal_mulai);
-                $end = Carbon::parse($c->tanggal_selesai);
-                $hariCuti = $start->diffInDays($end) + 1;
-                $potonganTotal += 100000 * $hariCuti;
-            }
+    //         foreach ($cutis as $c) {
+    //             $start = Carbon::parse($c->tanggal_mulai);
+    //             $end = Carbon::parse($c->tanggal_selesai);
+    //             $hariCuti = $start->diffInDays($end) + 1;
+    //             $potonganTotal += 100000 * $hariCuti;
+    //         }
 
-            // Simpan
-            Potongan::updateOrCreate(
-                ['karyawan_id' => $karyawan->id, 'bulan' => $bulan.'-'.$tahun],
-                ['nama_potongan' => 'Potongan Absensi & Cuti', 'jumlah' => $potonganTotal]
-            );
-        }
+    //         // Simpan
+    //         Potongan::updateOrCreate(
+    //             ['karyawan_id' => $karyawan->id, 'bulan' => $bulan.'-'.$tahun],
+    //             ['nama_potongan' => 'Potongan Absensi & Cuti', 'jumlah' => $potonganTotal]
+    //         );
+    //     }
 
-        return redirect()->route('potongan.index')->with('success', 'Potongan otomatis berhasil dihitung.');
-    }
+    //     return redirect()->route('potongan.index')->with('success', 'Potongan otomatis berhasil dihitung.');
+    // }
 }

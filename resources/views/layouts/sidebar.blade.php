@@ -71,7 +71,7 @@
         <div class="sidebar-heading">HRD Area</div>
 
         <!-- Data Karyawan -->
-        <li class="nav-item {{ request()->is('karyawan*') ? 'active' : '' }}">
+        <li class="nav-item {{ request()->is('karyawan') || request()->is('karyawan/*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('karyawan.index') }}">
                 <i class="fas fa-id-card-alt"></i>
                 <span>Data Karyawan</span>

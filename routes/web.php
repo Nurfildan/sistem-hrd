@@ -108,8 +108,7 @@ Route::middleware(['auth', 'role:HRD'])->group(function () {
     Route::post('/penggajian/store', [PenggajianController::class, 'store'])->name('penggajian.store');
     Route::get('/penggajian/show/{id}', [PenggajianController::class, 'show'])->name('penggajian.show');
     // Hitung otomatis penggajian (AJAX)
-    Route::get('/penggajian/hitung', [PenggajianController::class, 'hitung'])
-        ->name('penggajian.hitung');
+    Route::get('/penggajian/hitung', [PenggajianController::class, 'hitung'])->name('penggajian.hitung');
 
 
     // Potongan

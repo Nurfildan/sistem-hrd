@@ -37,39 +37,52 @@ class PenggajianController extends Controller
 
     public function store(Request $request)
     {
+        // ✅ UBAH 'bulan' JADI 'periode'
         $request->validate([
             'karyawan_id' => 'required|exists:karyawan,id',
-            'bulan' => 'required', // format: YYYY-MM
+            'periode' => 'required', // ✅ SESUAIKAN DENGAN NAMA INPUT
         ]);
 
-        $karyawan = Karyawan::with('jabatan')->findOrFail($request->karyawan_id);
+        $karyawan = Karyawan::with('jabatan.aturanPotongan') // ✅ Tambahkan aturanPotongan
+            ->findOrFail($request->karyawan_id);
 
         $gaji_pokok = $karyawan->jabatan->gaji_pokok;
         $tunjangan = $karyawan->jabatan->tunjangan;
 
-        // =========================
-        // POTONGAN (sementara 0)
-        // =========================
-        $potongan_otomatis = 0;
-        $potongan_tambahan = 0;
+        // ✅ HITUNG POTONGAN (sama seperti di method hitung)
+        [$tahun, $bulan] = explode('-', $request->periode);
 
-        $total = $gaji_pokok + $tunjangan - ($potongan_otomatis + $potongan_tambahan);
+        $jumlahAlpa = Absensi::where('karyawan_id', $karyawan->id)
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->where('status', 'Tidak Hadir')
+            ->count();
+
+        $aturan = $karyawan->jabatan->aturanPotongan;
+        $potongan_otomatis = 0;
+
+        if ($aturan) {
+            $potongan_otomatis = $jumlahAlpa * $aturan->potongan_per_hari;
+        }
+
+        $potongan_tambahan = 0;
+        $total_gaji = $gaji_pokok + $tunjangan - $potongan_otomatis - $potongan_tambahan;
 
         Penggajian::create([
             'karyawan_id' => $karyawan->id,
-            'periode' => $request->bulan, // 🔴 INI YANG HILANG
+            'periode' => $request->periode, // ✅ PAKAI 'periode'
             'tanggal_penggajian' => now(),
             'gaji_pokok' => $gaji_pokok,
             'tunjangan' => $tunjangan,
             'potongan_otomatis' => $potongan_otomatis,
             'potongan_tambahan' => $potongan_tambahan,
-            'total_gaji' => $total,
+            'total_gaji' => $total_gaji,
             'status_pembayaran' => 'Belum Dibayar'
         ]);
 
         return redirect()
             ->route('penggajian.index')
-            ->with('success', 'Penggajian berhasil digenerate');
+            ->with('success', 'Penggajian berhasil dibuat');
     }
 
 

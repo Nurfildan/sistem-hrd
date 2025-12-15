@@ -45,8 +45,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('karyawan', KaryawanController::class);
     Route::resource('absensi', AbsensiController::class);
     Route::resource('cuti', CutiController::class);
-    Route::resource('departemen', DepartemenController::class);
-    Route::resource('jabatan', JabatanController::class);
 });
 
 
@@ -58,8 +56,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); 
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); 
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 
@@ -109,6 +107,10 @@ Route::middleware(['auth', 'role:HRD'])->group(function () {
     Route::get('/penggajian/create', [PenggajianController::class, 'create'])->name('penggajian.create');
     Route::post('/penggajian/store', [PenggajianController::class, 'store'])->name('penggajian.store');
     Route::get('/penggajian/show/{id}', [PenggajianController::class, 'show'])->name('penggajian.show');
+    // Hitung otomatis penggajian (AJAX)
+    Route::get('/penggajian/hitung', [PenggajianController::class, 'hitung'])
+        ->name('penggajian.hitung');
+
 
     // Potongan
     Route::resource('potongan', PotonganController::class);

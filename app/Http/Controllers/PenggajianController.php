@@ -12,7 +12,7 @@ class PenggajianController extends Controller
     {
         $penggajian = Penggajian::with('karyawan')->get();
         return view('penggajian.index', compact('penggajian'));
-    }
+    } 
 
     public function create()
     {

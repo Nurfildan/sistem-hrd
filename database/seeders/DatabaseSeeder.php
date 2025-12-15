@@ -8,10 +8,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([
-            MasterSeeder::class,
-            DummySeeder::class,
-            UserSeeder::class,
-        ]);
+        if (app()->environment('local')) {
+            $this->call([
+                DepartemenSeeder::class,
+                JabatanSeeder::class,
+                AturanPotonganJabatanSeeder::class,
+                ShiftSeeder::class,
+                UserSeeder::class,
+            ]);
+        }
     }
 }

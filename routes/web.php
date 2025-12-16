@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     PotonganController,
     ProfileController,
     UserController,
-    DashboardController
+    DashboardController,
+    AturanPotonganJabatanController
 };
 
 /*
@@ -110,6 +111,7 @@ Route::middleware(['auth', 'role:HRD'])->group(function () {
     // Hitung otomatis penggajian (AJAX)
     Route::get('/penggajian/hitung', [PenggajianController::class, 'hitung'])->name('penggajian.hitung');
 
+    Route::resource('aturan-potongan', AturanPotonganJabatanController::class);
 
     // Potongan
     Route::resource('potongan', PotonganController::class);

@@ -123,7 +123,14 @@
                 <span>Potongan</span>
             </a>
         </li>
-
+        
+        <!-- Aturan Potongan -->
+        <li class="nav-item {{ request()->is('aturan-potongan*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('aturan-potongan.index') }}">
+                <i class="fas fa-cut"></i>
+                <span>Aturan Potongan</span>
+            </a>
+        </li>
         <hr class="sidebar-divider">
 
     @endif

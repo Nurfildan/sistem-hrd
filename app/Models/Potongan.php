@@ -10,10 +10,17 @@ class Potongan extends Model
     use HasFactory;
 
     protected $table = 'potongan';
-    protected $fillable = ['karyawan_id', 'nama_potongan', 'jumlah', 'bulan'];
 
-    public function karyawan()
+    protected $fillable = [
+        'penggajian_id',
+        'nama_potongan',
+        'jumlah',
+        'keterangan',
+    ];
+
+    /** RELATIONS */
+    public function penggajian()
     {
-        return $this->belongsTo(Karyawan::class);
+        return $this->belongsTo(Penggajian::class);
     }
 }

@@ -10,8 +10,14 @@ class Jabatan extends Model
     use HasFactory;
 
     protected $table = 'jabatan';
-    protected $fillable = ['nama_jabatan', 'gaji_pokok', 'tunjangan'];
 
+    protected $fillable = [
+        'nama_jabatan',
+        'gaji_pokok',
+        'tunjangan',
+    ];
+
+    /** RELATIONS */
     public function karyawan()
     {
         return $this->hasMany(Karyawan::class);

@@ -24,6 +24,7 @@ class Karyawan extends Model
         'foto',
     ];
 
+    /** RELATIONS */
     public function jabatan()
     {
         return $this->belongsTo(Jabatan::class);
@@ -33,30 +34,19 @@ class Karyawan extends Model
     {
         return $this->belongsTo(Departemen::class);
     }
-    public function user()
+
+    public function absensi()
     {
-        return $this->hasOne(User::class, 'karyawan_id');
+        return $this->hasMany(Absensi::class);
     }
 
-    public function karyawanShift()
-{
-    return $this->hasMany(KaryawanShift::class, 'karyawan_id');
-}
+    public function penggajian()
+    {
+        return $this->hasMany(Penggajian::class);
+    }
 
-public function absensi()
-{
-    return $this->hasMany(Absensi::class, 'karyawan_id');
-}
-
-public function potongan()
-{
-    return $this->hasMany(Potongan::class, 'karyawan_id');
-}
-
-public function cuti()
-{
-    return $this->hasMany(Cuti::class);
-}
-
-
+    public function user()
+    {
+        return $this->hasOne(User::class);
+    }
 }

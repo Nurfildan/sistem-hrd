@@ -2,106 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Potongan;
-use App\Models\Karyawan;
-use App\Models\Absensi;
-use App\Models\Cuti;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use App\Models\Potongan;
+use App\Models\Penggajian;
 
 class PotonganController extends Controller
 {
-    public function index()
-    {
-        $potongan = Potongan::with('karyawan')->get();
-        return view('potongan.index', compact('potongan'));
-    }
-
-    public function create()
-    {
-        $karyawan = Karyawan::all();
-        return view('potongan.create', compact('karyawan'));
-    }
-
     public function store(Request $request)
-    {
-        $request->validate([
-            'karyawan_id' => 'required',
-            'nama_potongan' => 'required',
-            'jumlah' => 'required|numeric',
-            'bulan' => 'required'
-        ]);
+{
+    $request->validate([
+        'penggajian_id' => 'required|exists:penggajian,id',
+        'nama_potongan' => 'required|string',
+        'jumlah' => 'required|numeric|min:0',
+    ]);
 
-        Potongan::create($request->all());
-        return redirect()->route('potongan.index')->with('success', 'Potongan berhasil ditambahkan.');
-    }
+    Potongan::create($request->all());
 
-    public function edit(Potongan $potongan)
-    {
-        $karyawan = Karyawan::all();
-        return view('potongan.edit', compact('potongan', 'karyawan'));
-    }
+    $penggajian = Penggajian::findOrFail($request->penggajian_id);
 
-    public function update(Request $request, Potongan $potongan)
-    {
-        $request->validate([
-            'nama_potongan' => 'required',
-            'jumlah' => 'required|numeric',
-        ]);
+    $totalTambahan = $penggajian->potongan()->sum('jumlah');
 
-        $potongan->update($request->all());
-        return redirect()->route('potongan.index')->with('success', 'Potongan berhasil diupdate.');
-    }
+    $penggajian->update([
+        'potongan_tambahan' => $totalTambahan,
+        'total_gaji' => ($penggajian->gaji_pokok + $penggajian->tunjangan)
+                        - $penggajian->potongan_otomatis
+                        - $totalTambahan
+    ]);
 
-    public function destroy(Potongan $potongan)
-    {
-        $potongan->delete();
-        return back()->with('success', 'Potongan dihapus.');
-    }
+    return back()->with('success', 'Potongan tambahan berhasil ditambahkan');
+}
 
-    public function showKaryawan($id)
-    {
-        $karyawan = Karyawan::with(['absensi', 'cuti', 'potongan'])->findOrFail($id);
-        return view('potongan.detail', compact('karyawan'));
-    }
-
-    // public function generatePotongan($bulan, $tahun)
-    // {
-    //     $karyawans = Karyawan::all();
-
-    //     foreach ($karyawans as $karyawan) {
-    //         $potonganTotal = 0;
-
-    //         // Absensi
-    //         $absensi = Absensi::where('karyawan_id', $karyawan->id)
-    //             ->whereMonth('tanggal', $bulan)
-    //             ->whereYear('tanggal', $tahun)
-    //             ->get();
-
-    //         foreach ($absensi as $a) {
-    //             if ($a->status == 'Alpa') $potonganTotal += 50000;
-    //             if ($a->status == 'Cuti') $potonganTotal += 100000;
-    //         }
-
-    //         // Cuti resmi disetujui
-    //         $cutis = Cuti::where('karyawan_id', $karyawan->id)
-    //             ->where('status', 'Disetujui')
-    //             ->get();
-
-    //         foreach ($cutis as $c) {
-    //             $start = Carbon::parse($c->tanggal_mulai);
-    //             $end = Carbon::parse($c->tanggal_selesai);
-    //             $hariCuti = $start->diffInDays($end) + 1;
-    //             $potonganTotal += 100000 * $hariCuti;
-    //         }
-
-    //         // Simpan
-    //         Potongan::updateOrCreate(
-    //             ['karyawan_id' => $karyawan->id, 'bulan' => $bulan.'-'.$tahun],
-    //             ['nama_potongan' => 'Potongan Absensi & Cuti', 'jumlah' => $potonganTotal]
-    //         );
-    //     }
-
-    //     return redirect()->route('potongan.index')->with('success', 'Potongan otomatis berhasil dihitung.');
-    // }
 }

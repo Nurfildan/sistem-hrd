@@ -115,15 +115,14 @@
                 <span>Penggajian</span>
             </a>
         </li>
-
-        <!-- Potongan -->
-        <li class="nav-item {{ request()->is('potongan*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('potongan.index') }}">
+        
+        <!-- Aturan Potongan -->
+        <li class="nav-item {{ request()->is('aturan-potongan*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('aturan-potongan.index') }}">
                 <i class="fas fa-cut"></i>
-                <span>Potongan</span>
+                <span>Aturan Potongan</span>
             </a>
         </li>
-
         <hr class="sidebar-divider">
 
     @endif

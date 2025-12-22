@@ -13,7 +13,8 @@ use App\Http\Controllers\{
     PotonganController,
     ProfileController,
     UserController,
-    DashboardController
+    DashboardController,
+    AturanPotonganJabatanController
 };
 
 /*
@@ -45,8 +46,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('karyawan', KaryawanController::class);
     Route::resource('absensi', AbsensiController::class);
     Route::resource('cuti', CutiController::class);
-    Route::resource('departemen', DepartemenController::class);
-    Route::resource('jabatan', JabatanController::class);
 });
 
 
@@ -58,8 +57,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile.index');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update'); 
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy'); 
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 
@@ -93,31 +92,25 @@ Route::middleware(['auth', 'role:Admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:HRD'])->group(function () {
-    // Data Karyawan
-    Route::resource('karyawan', KaryawanController::class);
 
-    // Shift
+    Route::resource('karyawan', KaryawanController::class);
     Route::resource('shift', ShiftController::class);
+
     Route::get('karyawan_shift', [KaryawanShiftController::class, 'index'])->name('karyawan_shift.index');
     Route::post('karyawan_shift/store', [KaryawanShiftController::class, 'store'])->name('karyawan_shift.store');
     Route::post('karyawan_shift/bulk-store', [KaryawanShiftController::class, 'bulkStore'])->name('karyawan_shift.bulkStore');
     Route::delete('karyawan_shift/destroy', [KaryawanShiftController::class, 'destroy'])->name('karyawan_shift.destroy');
     Route::get('karyawan_shift/schedule', [KaryawanShiftController::class, 'getSchedule'])->name('karyawan_shift.getSchedule');
 
-    // Penggajian
+    Route::resource('aturan-potongan', AturanPotonganJabatanController::class);
+
     Route::get('/penggajian', [PenggajianController::class, 'index'])->name('penggajian.index');
-    Route::get('/penggajian/create', [PenggajianController::class, 'create'])->name('penggajian.create');
-    Route::post('/penggajian/store', [PenggajianController::class, 'store'])->name('penggajian.store');
-    Route::get('/penggajian/show/{id}', [PenggajianController::class, 'show'])->name('penggajian.show');
+    Route::post('/penggajian/generate', [PenggajianController::class, 'generateBulanan'])->name('penggajian.generate');
+    Route::get('/penggajian/{id}', [PenggajianController::class, 'show'])->name('penggajian.show');
 
-    // Potongan
-    Route::resource('potongan', PotonganController::class);
-    Route::get('/potongan', [PotonganController::class, 'index'])->name('potongan.index');
-    Route::post('/potongan/store', [PotonganController::class, 'store'])->name('potongan.store');
-    Route::get('potongan/karyawan/{id}', [PotonganController::class, 'showKaryawan'])->name('potongan.karyawan');
-    Route::get('potongan/generate/{bulan}/{tahun}', [PotonganController::class, 'generatePotongan'])->name('potongan.generate');
-
+    Route::post('/potongan', [PotonganController::class, 'store'])->name('potongan.store');
 });
+
 
 
 /*

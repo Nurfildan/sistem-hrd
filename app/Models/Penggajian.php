@@ -10,19 +10,27 @@ class Penggajian extends Model
     use HasFactory;
 
     protected $table = 'penggajian';
+
     protected $fillable = [
         'karyawan_id',
-        'bulan',
+        'periode',
         'tanggal_penggajian',
         'gaji_pokok',
         'tunjangan',
-        'potongan',
+        'potongan_otomatis',
+        'potongan_tambahan',
         'total_gaji',
-        'status_pembayaran'
+        'status_pembayaran',
     ];
 
+    /** RELATIONS */
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class);
+    }
+
+    public function potongan()
+    {
+        return $this->hasMany(Potongan::class);
     }
 }

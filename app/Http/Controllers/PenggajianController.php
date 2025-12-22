@@ -2,114 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Penggajian;
-use App\Models\Karyawan;
 use Illuminate\Http\Request;
+use App\Models\Karyawan;
+use App\Models\Penggajian;
+use App\Models\Absensi;
+use App\Models\AturanPotonganJabatan;
+use Carbon\Carbon;
+use DB;
 
 class PenggajianController extends Controller
 {
-    public function index()
+    /**
+     * INDEX → tampil berdasarkan periode
+     */
+    public function index(Request $request)
     {
-        $penggajian = Penggajian::with('karyawan')->get();
-        return view('penggajian.index', compact('penggajian'));
+        $periode = $request->get('periode', now()->format('Y-m'));
+
+        $penggajian = Penggajian::with('karyawan.jabatan')
+            ->where('periode', $periode)
+            ->orderBy('karyawan_id')
+            ->get();
+
+        return view('penggajian.index', compact('penggajian', 'periode'));
     }
 
-    public function create()
+    /**
+     * GENERATE GAJI BULANAN (1 tombol)
+     */
+    public function generateBulanan(Request $request)
     {
-        $karyawan = Karyawan::with('jabatan')->get();
-        return view('penggajian.create', compact('karyawan'));
-    }
-
-    public function show($id)
-    {
-        // Ambil data penggajian dengan relasi karyawan & jabatan
-        $penggajian = Penggajian::with(['karyawan.jabatan'])
-            ->findOrFail($id);
-
-        return view('penggajian.show', compact('penggajian'));
-    }
-
-
-    public function store(Request $request)
-    {
-        $karyawan = Karyawan::findOrFail($request->karyawan_id);
-        $gaji_pokok = $karyawan->jabatan->gaji_pokok;
-        $tunjangan = $karyawan->jabatan->tunjangan;
-        $potongan = 0;
-
-        $total = $gaji_pokok + $tunjangan - $potongan;
-
-        Penggajian::create([
-            'karyawan_id' => $karyawan->id,
-            'bulan' => $request->bulan,
-            'tanggal_penggajian' => now(),
-            'gaji_pokok' => $gaji_pokok,
-            'tunjangan' => $tunjangan,
-            'potongan' => $potongan,
-            'total_gaji' => $total,
-            'status_pembayaran' => 'Belum Dibayar'
+        $request->validate([
+            'periode' => 'required|date_format:Y-m'
         ]);
 
-        return redirect()->route('penggajian.index')->with('success', 'Data gaji berhasil ditambahkan.');
+        $periode = $request->periode;
+        $bulan = Carbon::createFromFormat('Y-m', $periode)->month;
+        $tahun = Carbon::createFromFormat('Y-m', $periode)->year;
+
+        DB::transaction(function () use ($periode, $bulan, $tahun) {
+
+            $karyawans = Karyawan::with('jabatan')->get();
+
+            foreach ($karyawans as $karyawan) {
+
+                $aturan = AturanPotonganJabatan::where('jabatan_id', $karyawan->jabatan_id)->first();
+                if (!$aturan) continue;
+
+                $absensis = Absensi::where('karyawan_id', $karyawan->id)
+                    ->whereMonth('tanggal', $bulan)
+                    ->whereYear('tanggal', $tahun)
+                    ->get();
+
+                $potonganOtomatis = 0;
+
+                foreach ($absensis as $absen) {
+                    $potonganOtomatis += match ($absen->status) {
+                        'Hadir' => $aturan->potongan_hadir,
+                        'Terlambat' => $aturan->potongan_terlambat,
+                        'Izin' => $aturan->potongan_izin,
+                        'Sakit' => $aturan->potongan_sakit,
+                        'Alpa' => $aturan->potongan_alpa,
+                        'Cuti' => $aturan->potongan_cuti,
+                        default => 0
+                    };
+                }
+
+                $gajiPokok = $karyawan->jabatan->gaji_pokok;
+                $tunjangan = $karyawan->jabatan->tunjangan;
+
+                Penggajian::updateOrCreate(
+                    [
+                        'karyawan_id' => $karyawan->id,
+                        'periode' => $periode
+                    ],
+                    [
+                        'tanggal_penggajian' => now(),
+                        'gaji_pokok' => $gajiPokok,
+                        'tunjangan' => $tunjangan,
+                        'potongan_otomatis' => $potonganOtomatis,
+                        'potongan_tambahan' => 0,
+                        'total_gaji' => ($gajiPokok + $tunjangan) - $potonganOtomatis,
+                        'status_pembayaran' => 'Belum Dibayar'
+                    ]
+                );
+            }
+        });
+
+        return redirect()
+            ->route('penggajian.index', ['periode' => $periode])
+            ->with('success', 'Penggajian berhasil digenerate');
     }
 
-
-    //     public function store(Request $request)
-// {
-//     $karyawan = Karyawan::with('jabatan')->findOrFail($request->karyawan_id);
-
-    //     $gaji_pokok = $karyawan->jabatan->gaji_pokok;
-//     $tunjangan  = $karyawan->jabatan->tunjangan;
-
-    //     // ==============================
-//     // HITUNG POTONGAN AUTOMATIS
-//     // ==============================
-
-    //     $absensi = \App\Models\Absensi::where('karyawan_id', $karyawan->id)
-//         ->whereMonth('tanggal', date('m', strtotime($request->bulan)))
-//         ->whereYear('tanggal', date('Y', strtotime($request->bulan)))
-//         ->get();
-
-    //     $potongan = 0;
-//     $tarif_potongan_per_jam = 15000; // bisa diubah
-
-    //     foreach ($absensi as $a) {
-
-    //         // 1. Jika tidak hadir
-//         if ($a->status == 'Tidak Hadir') {
-//             $potongan += 50000; // aturan bebas
-//             continue;
-//         }
-
-    //         // 2. Jika jam masuk & keluar tercatat → hitung jam kerja
-//         if ($a->jam_masuk && $a->jam_keluar) {
-//             $jamKerja = \Carbon\Carbon::parse($a->jam_masuk)
-//                         ->diffInHours(\Carbon\Carbon::parse($a->jam_keluar));
-
-    //             if ($jamKerja < 8) {
-//                 $kurang = 8 - $jamKerja;
-//                 $potongan += $kurang * $tarif_potongan_per_jam;
-//             }
-//         }
-//     }
-
-    //     // ==============================
-//     // TOTAL GAJI
-//     // ==============================
-//     $total = $gaji_pokok + $tunjangan - $potongan;
-
-    //     // SIMPAN
-//     Penggajian::create([
-//         'karyawan_id' => $karyawan->id,
-//         'bulan' => $request->bulan,
-//         'tanggal_penggajian' => now(),
-//         'gaji_pokok' => $gaji_pokok,
-//         'tunjangan' => $tunjangan,
-//         'potongan' => $potongan,
-//         'total_gaji' => $total,
-//         'status_pembayaran' => 'Belum Dibayar'
-//     ]);
-
-    //     return redirect()->route('penggajian.index')->with('success', 'Data gaji berhasil ditambahkan.');
-// }
+    /**
+     * DETAIL GAJI (1 karyawan, 1 bulan)
+     */
+    public function show($id)
+    {
+        $penggajian = Penggajian::with(['karyawan.jabatan', 'potongan'])->findOrFail($id);
+        return view('penggajian.show', compact('penggajian'));
+    }
 }

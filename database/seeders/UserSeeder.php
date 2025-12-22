@@ -25,7 +25,6 @@ class UserSeeder extends Seeder
                 'name'         => 'HRD',
                 'password'     => Hash::make('HRD12345'),
                 'role'         => 'HRD',
-                'karyawan_id'  => 1,
             ]
         );
 
@@ -35,7 +34,7 @@ class UserSeeder extends Seeder
                 'name'         => 'Karyawan',
                 'password'     => Hash::make('karyawan'),
                 'role'         => 'Karyawan',
-                'karyawan_id'  => 2,
+                'karyawan_id'  => 1,
             ]
         );
     }

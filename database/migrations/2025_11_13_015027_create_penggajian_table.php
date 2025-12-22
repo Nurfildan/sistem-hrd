@@ -1,59 +1,51 @@
 <?php
 
-namespace App\Models;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+return new class extends Migration {
 
-class Penggajian extends Model
-{
-    use HasFactory;
-
-    protected $table = 'penggajian';
-
-    protected $fillable = [
-        'karyawan_id',
-        'periode',
-        'tanggal_penggajian',
-        'gaji_pokok',
-        'tunjangan',
-        'potongan_otomatis',
-        'potongan_tambahan',
-        'total_gaji',
-        'status_pembayaran'
-    ];
-
-    protected $casts = [
-        'tanggal_penggajian' => 'date',
-        'gaji_pokok' => 'decimal:2',
-        'tunjangan' => 'decimal:2',
-        'potongan_otomatis' => 'decimal:2',
-        'potongan_tambahan' => 'decimal:2',
-        'total_gaji' => 'decimal:2',
-    ];
-
-    /* ================= RELATION ================= */
-
-    public function karyawan()
+    public function up(): void
     {
-        return $this->belongsTo(Karyawan::class);
+        Schema::create('penggajian', function (Blueprint $table) {
+            $table->id();
+
+            $table->unsignedBigInteger('karyawan_id');
+
+            // Periode gaji (contoh: 2025-09)
+            $table->string('periode');
+
+            $table->date('tanggal_penggajian');
+
+            // Komponen gaji
+            $table->decimal('gaji_pokok', 15, 2)->default(0);
+            $table->decimal('tunjangan', 15, 2)->default(0);
+
+            // Potongan
+            $table->decimal('potongan_otomatis', 15, 2)->default(0);
+            $table->decimal('potongan_tambahan', 15, 2)->default(0);
+            
+            // Total gaji bersih
+            $table->decimal('total_gaji', 15, 2)->default(0);
+
+            $table->enum('status_pembayaran', [
+                'Belum Dibayar',
+                'Sudah Dibayar'
+            ])->default('Belum Dibayar');
+
+            $table->timestamps();
+
+            $table->foreign('karyawan_id')
+                ->references('id')
+                ->on('karyawan')
+                ->cascadeOnDelete();
+        });
     }
 
-    public function potongan()
+    public function down(): void
     {
-        return $this->hasMany(Potongan::class);
+        Schema::dropIfExists('penggajian');
+
     }
-
-    /* ================= HELPER ================= */
-
-    public function hitungTotalGaji()
-    {
-        $this->potongan_tambahan = $this->potongan()->sum('jumlah');
-
-        $this->total_gaji =
-            ($this->gaji_pokok + $this->tunjangan)
-            - ($this->potongan_otomatis + $this->potongan_tambahan);
-
-        return $this->total_gaji;
-    }
-}
+};

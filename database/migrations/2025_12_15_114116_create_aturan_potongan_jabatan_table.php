@@ -12,7 +12,14 @@ return new class extends Migration {
             $table->id();
 
             $table->unsignedBigInteger('jabatan_id');
-            $table->decimal('potongan_per_absen', 15, 2);
+
+            // Potongan berdasarkan status kehadiran
+            $table->decimal('potongan_hadir', 15, 2)->default(0);
+            $table->decimal('potongan_terlambat', 15, 2)->default(0);
+            $table->decimal('potongan_izin', 15, 2)->default(0);
+            $table->decimal('potongan_sakit', 15, 2)->default(0);
+            $table->decimal('potongan_alpa', 15, 2)->default(0);
+            $table->decimal('potongan_cuti', 15, 2)->default(0);
 
             $table->timestamps();
 
@@ -20,6 +27,9 @@ return new class extends Migration {
                 ->references('id')
                 ->on('jabatan')
                 ->cascadeOnDelete();
+
+            // 1 jabatan = 1 aturan
+            $table->unique('jabatan_id');
         });
     }
 

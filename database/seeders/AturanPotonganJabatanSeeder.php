@@ -3,27 +3,24 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\AturanPotonganJabatan;
-use App\Models\Jabatan;
+use Illuminate\Support\Facades\DB;
 
 class AturanPotonganJabatanSeeder extends Seeder
 {
     public function run(): void
     {
-        $aturan = [
-            'Staff'   => 100000,
-            'Manager' => 300000,
-        ];
-
-        foreach ($aturan as $jabatanNama => $potongan) {
-            $jabatan = Jabatan::where('nama_jabatan', $jabatanNama)->first();
-
-            if ($jabatan) {
-                AturanPotonganJabatan::updateOrCreate(
-                    ['jabatan_id' => $jabatan->id],
-                    ['potongan_per_absen' => $potongan]
-                );
-            }
-        }
+        DB::table('aturan_potongan_jabatan')->insert([
+            [
+                'jabatan_id' => 1,
+                'potongan_hadir'      => 0,
+                'potongan_terlambat'  => 25000,
+                'potongan_izin'       => 30000,
+                'potongan_sakit'      => 0,
+                'potongan_alpa'       => 100000,
+                'potongan_cuti'       => 0,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
     }
 }

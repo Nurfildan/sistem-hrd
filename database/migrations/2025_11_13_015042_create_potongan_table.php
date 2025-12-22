@@ -1,31 +1,33 @@
 <?php
 
-namespace App\Models;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class Potongan extends Model
-{
-    use HasFactory;
-
-    protected $table = 'potongan';
-
-    protected $fillable = [
-        'penggajian_id',
-        'nama_potongan',
-        'jumlah',
-        'keterangan'
-    ];
-
-    protected $casts = [
-        'jumlah' => 'decimal:2',
-    ];
-
-    /* ================= RELATION ================= */
-
-    public function penggajian()
+return new class extends Migration {
+    public function up(): void
     {
-        return $this->belongsTo(Penggajian::class);
+        Schema::create('potongan', function (Blueprint $table) {
+            $table->id();
+
+            // Relasi ke penggajian
+            $table->unsignedBigInteger('penggajian_id');
+            $table->string('nama_potongan');
+            $table->decimal('jumlah', 15, 2);
+
+            // keterangan tambahan
+            $table->text('keterangan')->nullable();
+
+            $table->timestamps();
+            
+            $table->foreign('penggajian_id')
+                ->references('id')
+                ->on('penggajian')
+                ->cascadeOnDelete();
+        });
     }
-}
+    public function down(): void
+    {
+        Schema::dropIfExists('potongan');
+    }
+};

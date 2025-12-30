@@ -35,6 +35,11 @@ class Karyawan extends Model
         return $this->belongsTo(Departemen::class);
     }
 
+    public function Shift()
+    {
+        return $this->hasMany(Shift::class);
+    }
+    
     public function absensi()
     {
         return $this->hasMany(Absensi::class);

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Potongan extends Model
 {
@@ -18,7 +18,10 @@ class Potongan extends Model
         'keterangan',
     ];
 
-    /** RELATIONS */
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
+
     public function penggajian()
     {
         return $this->belongsTo(Penggajian::class);

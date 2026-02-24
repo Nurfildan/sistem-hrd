@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Jabatan extends Model
 {
@@ -17,7 +17,10 @@ class Jabatan extends Model
         'tunjangan',
     ];
 
-    /** RELATIONS */
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
+
     public function karyawan()
     {
         return $this->hasMany(Karyawan::class);

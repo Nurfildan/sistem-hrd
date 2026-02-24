@@ -8,7 +8,7 @@
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-briefcase"></i> Data Jabatan
         </h1>
-        <a href="{{ route('jabatan.create') }}" class="btn btn-primary btn-icon-split shadow-sm">
+        <a href="{{ route('admin.jabatan.create') }}" class="btn btn-primary btn-icon-split shadow-sm">
             <span class="icon text-white-50">
                 <i class="fas fa-plus"></i>
             </span>
@@ -66,13 +66,13 @@
 
                             <td class="text-center">
 
-                                <a href="{{ route('jabatan.edit', $item->id) }}" 
+                                <a href="{{ route('admin.jabatan.edit', $item->id) }}" 
                                    class="btn btn-warning btn-sm"
                                    data-toggle="tooltip" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
 
-                                <form action="{{ route('jabatan.destroy', $item->id) }}" 
+                                <form action="{{ route('admin.jabatan.destroy', $item->id) }}" 
                                       method="POST" class="d-inline"
                                       onsubmit="return confirm('Yakin ingin menghapus jabatan ini?')">
                                     @csrf
@@ -91,7 +91,7 @@
                             <td colspan="5" class="text-center py-4">
                                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">Belum ada data jabatan</p>
-                                <a href="{{ route('jabatan.create') }}" class="btn btn-primary btn-sm">
+                                <a href="{{ route('admin.jabatan.create') }}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus"></i> Tambah Jabatan Pertama
                                 </a>
                             </td>

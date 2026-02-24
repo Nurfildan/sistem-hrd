@@ -4,163 +4,170 @@ namespace App\Http\Controllers;
 
 use App\Models\Absensi;
 use App\Models\KaryawanShift;
+use App\Models\Shift;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AbsensiController extends Controller
 {
-    /**
-     * ============================
-     * INDEX
-     * HRD  : semua absensi
-     * KARY : absensi sendiri
-     * ============================
-     */
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
-        if ($user->role === 'HRD') {
-            $absensi = Absensi::with(['karyawan', 'shift'])
-                ->orderByDesc('tanggal')
-                ->get();
-        } else {
-            if (!$user->karyawan_id) {
-                abort(403);
-            }
+        $query = Absensi::with(['karyawan', 'shift'])
+            ->orderBy('tanggal', 'desc');
 
-            $absensi = Absensi::with('shift')
-                ->where('karyawan_id', $user->karyawan_id)
-                ->orderByDesc('tanggal')
-                ->get();
+        if ($user->role === 'Karyawan') {
+            $query->where('karyawan_id', $user->karyawan_id);
         }
 
-        return view('absensi.index', compact('absensi'));
+        $absensi = $query->get();
+
+        $todayAbsen = null;
+
+        if ($user->role === 'Karyawan') {
+            $todayAbsen = Absensi::with('shift')
+                ->where('karyawan_id', $user->karyawan_id)
+                ->whereDate('tanggal', now())
+                ->first();
+        }
+
+        return view('absensi.index', compact('absensi', 'todayAbsen'));
     }
 
-    /**
-     * ============================
-     * ABSEN MASUK
-     * ============================
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | ABSEN MASUK (AJAX JSON RESPONSE)
+    |--------------------------------------------------------------------------
+    */
+
     public function absenMasuk()
     {
-        $user = auth()->user();
+        $user = Auth::user();
+        $karyawanId = $user->karyawan_id;
+        $tanggal = Carbon::today()->toDateString();
 
-        if (!$user->karyawan_id) {
-            return back()->with('error', 'Akun tidak terhubung dengan data karyawan');
+        if (!$karyawanId) {
+            return response()->json([
+                'message' => 'Data karyawan tidak ditemukan.'
+            ], 400);
         }
 
-        $today = now()->toDateString();
-
-        $karyawanShift = KaryawanShift::with('shift')
-            ->where('karyawan_id', $user->karyawan_id)
-            ->whereDate('tanggal', $today)
+        // Ambil jadwal shift hari ini
+        $jadwalShift = KaryawanShift::where('karyawan_id', $karyawanId)
+            ->whereDate('tanggal', $tanggal)
             ->first();
 
-        if (!$karyawanShift) {
-            return back()->with('error', 'Anda tidak memiliki shift hari ini');
+        if (!$jadwalShift) {
+            return response()->json([
+                'message' => 'Shift hari ini belum diatur oleh HRD.'
+            ], 400);
         }
 
-        if (
-            Absensi::where('karyawan_id', $user->karyawan_id)
-                ->whereDate('tanggal', $today)
-                ->exists()
-        ) {
-            return back()->with('error', 'Anda sudah absen hari ini');
+        // Cek sudah absen atau belum
+        $cek = Absensi::where('karyawan_id', $karyawanId)
+            ->whereDate('tanggal', $tanggal)
+            ->first();
+
+        if ($cek) {
+            return response()->json([
+                'message' => 'Anda sudah absen hari ini.'
+            ], 400);
         }
 
-        $jamMasuk = now()->format('H:i:s');
-        $jamShift = $karyawanShift->shift->jam_mulai;
+        // Optional: otomatis terlambat
+        $shift = Shift::find($jadwalShift->shift_id);
+        $jamSekarang = Carbon::now();
+        $jamShift = Carbon::parse($shift->jam_masuk);
 
-        $status = $jamMasuk > $jamShift ? 'Terlambat' : 'Hadir';
+        $status = $jamSekarang->gt($jamShift) ? 'Terlambat' : 'Hadir';
 
         Absensi::create([
-            'karyawan_id' => $user->karyawan_id,
-            'shift_id' => $karyawanShift->shift_id,
-            'tanggal' => $today,
-            'jam_masuk' => $jamMasuk,
-            'status' => $status,
+            'karyawan_id' => $karyawanId,
+            'shift_id'     => $jadwalShift->shift_id,
+            'tanggal'      => $tanggal,
+            'jam_masuk'    => $jamSekarang->format('H:i:s'),
+            'status'       => $status,
         ]);
 
-        return back()->with('success', 'Absen masuk berhasil');
+        return response()->json([
+            'message' => 'Absen masuk berhasil.'
+        ]);
     }
 
-    /**
-     * ============================
-     * ABSEN KELUAR
-     * ============================
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | ABSEN KELUAR (AJAX JSON RESPONSE)
+    |--------------------------------------------------------------------------
+    */
+
     public function absenKeluar()
     {
-        $user = auth()->user();
+        $karyawanId = Auth::user()->karyawan_id;
+        $tanggal = Carbon::today()->toDateString();
 
-        if (!$user->karyawan_id) {
-            return back()->with('error', 'Akun tidak terhubung dengan data karyawan');
-        }
-
-        $today = now()->toDateString();
-
-        $absensi = Absensi::where('karyawan_id', $user->karyawan_id)
-            ->whereDate('tanggal', $today)
+        $absensi = Absensi::where('karyawan_id', $karyawanId)
+            ->whereDate('tanggal', $tanggal)
             ->first();
 
         if (!$absensi) {
-            return back()->with('error', 'Anda belum absen masuk');
+            return response()->json([
+                'message' => 'Anda belum absen masuk.'
+            ], 400);
         }
 
         if ($absensi->jam_keluar) {
-            return back()->with('error', 'Anda sudah absen keluar');
+            return response()->json([
+                'message' => 'Anda sudah absen keluar.'
+            ], 400);
         }
 
         $absensi->update([
-            'jam_keluar' => now()->format('H:i:s'),
+            'jam_keluar' => Carbon::now()->format('H:i:s'),
         ]);
 
-        return back()->with('success', 'Absen keluar berhasil');
+        return response()->json([
+            'message' => 'Absen keluar berhasil.'
+        ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | HRD ONLY
+    |--------------------------------------------------------------------------
+    */
 
     public function edit(Absensi $absensi)
     {
-        abort_if(auth()->user()->role !== 'HRD', 403);
-
-        return view('absensi.edit', compact('absensi'));
+        $shift = Shift::all();
+        return view('absensi.edit', compact('absensi', 'shift'));
     }
 
-    /**
-     * ============================
-     * HRD - UPDATE
-     * ============================
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, Absensi $absensi)
     {
-        abort_if(auth()->user()->role !== 'HRD', 403);
-
         $request->validate([
-            'jam_masuk' => 'nullable|date_format:H:i',
-            'jam_keluar' => 'nullable|date_format:H:i',
-            'status' => 'required|in:Hadir,Terlambat,Izin,Sakit,Alpa,Cuti',
+            'shift_id' => 'required|exists:shift,id',
+            'jam_masuk' => 'nullable',
+            'jam_keluar' => 'nullable',
+            'status' => 'required',
         ]);
 
-        Absensi::findOrFail($id)->update($request->only([
-            'jam_masuk',
-            'jam_keluar',
-            'status'
-        ]));
+        $absensi->update([
+            'shift_id' => $request->shift_id,
+            'jam_masuk' => $request->jam_masuk,
+            'jam_keluar' => $request->jam_keluar,
+            'status' => $request->status,
+        ]);
 
-        return back()->with('success', 'Absensi berhasil diperbarui');
+        return redirect()->route('absensi.index')
+            ->with('success', 'Data absensi berhasil diperbarui.');
     }
 
-    /**
-     * ============================
-     * HRD - DELETE
-     * ============================
-     */
-    public function destroy($id)
+    public function destroy(Absensi $absensi)
     {
-        abort_if(auth()->user()->role !== 'HRD', 403);
+        $absensi->delete();
 
-        Absensi::findOrFail($id)->delete();
-
-        return back()->with('success', 'Data absensi berhasil dihapus');
+        return back()->with('success', 'Data absensi berhasil dihapus.');
     }
 }

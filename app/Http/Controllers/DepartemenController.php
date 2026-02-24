@@ -9,53 +9,56 @@ class DepartemenController extends Controller
 {
     public function index()
     {
-        $departemen = Departemen::all();
-        return view('departemen.index', compact('departemen'));
+        $departemen = Departemen::orderBy('nama_departemen')->get();
+        return view('admin.departemen.index', compact('departemen'));
     }
 
     public function create()
     {
-        return view('departemen.create');
+        return view('admin.departemen.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'nama_departemen' => 'required'
+            'nama_departemen' => 'required|string|max:100|unique:departemen,nama_departemen',
         ]);
 
         Departemen::create([
-            'nama_departemen' => $request->nama_departemen
+            'nama_departemen' => $request->nama_departemen,
         ]);
 
-        return redirect()->route('departemen.index')
-                         ->with('success', 'Departemen berhasil ditambahkan.');
+        return redirect()
+            ->route('admin.departemen.index')
+            ->with('success', 'Departemen berhasil ditambahkan');
     }
 
     public function edit(Departemen $departemen)
     {
-        return view('departemen.edit', compact('departemen'));
+        return view('admin.departemen.edit', compact('departemen'));
     }
 
     public function update(Request $request, Departemen $departemen)
     {
         $request->validate([
-            'nama_departemen' => 'required'
+            'nama_departemen' => 'required|string|max:100|unique:departemen,nama_departemen,' . $departemen->id,
         ]);
 
         $departemen->update([
-            'nama_departemen' => $request->nama_departemen
+            'nama_departemen' => $request->nama_departemen,
         ]);
 
-        return redirect()->route('departemen.index')
-                         ->with('success', 'Departemen berhasil diperbarui.');
+        return redirect()
+            ->route('admin.departemen.index')
+            ->with('success', 'Departemen berhasil diperbarui');
     }
 
     public function destroy(Departemen $departemen)
     {
         $departemen->delete();
 
-        return redirect()->route('departemen.index')
-                         ->with('success', 'Departemen berhasil dihapus.');
+        return redirect()
+            ->route('admin.departemen.index')
+            ->with('success', 'Departemen berhasil dihapus');
     }
 }

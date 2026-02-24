@@ -6,32 +6,43 @@ use App\Models\Karyawan;
 use App\Models\Shift;
 use App\Models\KaryawanShift;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class KaryawanShiftController extends Controller
 {
+    /**
+     * Menampilkan halaman jadwal shift karyawan
+     */
     public function index(Request $request)
     {
-        // Ambil bulan dan tahun dari request, default ke bulan sekarang
-        $bulan = $request->get('bulan', now()->month);
-        $tahun = $request->get('tahun', now()->year);
-        
-        // Ambil semua karyawan dengan departemen
-        $karyawan = Karyawan::with('departemen')->get();
-        
-        // Ambil semua shift
-        $shifts = Shift::all();
-        
-        // Ambil jadwal shift untuk bulan dan tahun yang dipilih
-        $jadwalShift = KaryawanShift::with(['karyawan', 'shift'])
-            ->whereMonth('tanggal', $bulan)
+        $bulan = $request->bulan ?? now()->month;
+        $tahun = $request->tahun ?? now()->year;
+
+        $karyawan = Karyawan::with('departemen')
+            ->orderBy('nama')
+            ->get();
+
+        $shifts = Shift::orderBy('nama_shift')->get();
+
+        $jadwalShift = KaryawanShift::whereMonth('tanggal', $bulan)
             ->whereYear('tanggal', $tahun)
             ->get()
             ->groupBy('karyawan_id');
-        
-        return view('karyawan_shift.index', compact('karyawan', 'shifts', 'jadwalShift', 'bulan', 'tahun'));
+
+        return view('karyawan_shift.index', compact(
+            'karyawan',
+            'shifts',
+            'jadwalShift',
+            'bulan',
+            'tahun'
+        ));
     }
 
+
+    /**
+     * Simpan 1 jadwal shift
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -40,22 +51,25 @@ class KaryawanShiftController extends Controller
             'tanggal' => 'required|date',
         ]);
 
-        // Cek apakah sudah ada jadwal untuk karyawan di tanggal tersebut
-        $existing = KaryawanShift::where('karyawan_id', $request->karyawan_id)
+        // Hindari double shift di tanggal yang sama
+        $exists = KaryawanShift::where('karyawan_id', $request->karyawan_id)
             ->where('tanggal', $request->tanggal)
-            ->first();
+            ->exists();
 
-        if ($existing) {
-            // Update jika sudah ada
-            $existing->update(['shift_id' => $request->shift_id]);
-        } else {
-            // Buat baru jika belum ada
-            KaryawanShift::create($request->all());
+        if ($exists) {
+            return back()->withErrors([
+                'tanggal' => 'Karyawan sudah memiliki shift pada tanggal tersebut'
+            ]);
         }
 
-        return response()->json(['success' => true, 'message' => 'Jadwal shift berhasil disimpan']);
+        KaryawanShift::create($request->all());
+
+        return back()->with('success', 'Jadwal shift berhasil disimpan');
     }
 
+    /**
+     * Simpan banyak jadwal sekaligus (bulk)
+     */
     public function bulkStore(Request $request)
     {
         $request->validate([
@@ -65,45 +79,60 @@ class KaryawanShiftController extends Controller
             'schedules.*.tanggal' => 'required|date',
         ]);
 
-        foreach ($request->schedules as $schedule) {
-            $existing = KaryawanShift::where('karyawan_id', $schedule['karyawan_id'])
-                ->where('tanggal', $schedule['tanggal'])
-                ->first();
-
-            if ($existing) {
-                $existing->update(['shift_id' => $schedule['shift_id']]);
-            } else {
-                KaryawanShift::create($schedule);
+        DB::transaction(function () use ($request) {
+            foreach ($request->schedules as $schedule) {
+                KaryawanShift::updateOrCreate(
+                    [
+                        'karyawan_id' => $schedule['karyawan_id'],
+                        'tanggal' => $schedule['tanggal'],
+                    ],
+                    [
+                        'shift_id' => $schedule['shift_id'],
+                    ]
+                );
             }
-        }
+        });
 
-        return response()->json(['success' => true, 'message' => 'Semua jadwal shift berhasil disimpan']);
+        return response()->json([
+            'message' => 'Jadwal shift berhasil disimpan!'
+        ]);
     }
 
+
+    /**
+     * Hapus jadwal shift
+     */
     public function destroy(Request $request)
     {
         $request->validate([
-            'karyawan_id' => 'required|exists:karyawan,id',
-            'tanggal' => 'required|date',
+            'id' => 'required|exists:karyawan_shift,id',
         ]);
 
-        KaryawanShift::where('karyawan_id', $request->karyawan_id)
-            ->where('tanggal', $request->tanggal)
-            ->delete();
+        KaryawanShift::findOrFail($request->id)->delete();
 
-        return response()->json(['success' => true, 'message' => 'Jadwal shift berhasil dihapus']);
+        return back()->with('success', 'Jadwal shift berhasil dihapus');
     }
 
+    /**
+     * Ambil jadwal untuk kalender / ajax
+     */
     public function getSchedule(Request $request)
     {
-        $bulan = $request->get('bulan', now()->month);
-        $tahun = $request->get('tahun', now()->year);
-        
-        $jadwal = KaryawanShift::with(['karyawan', 'shift'])
-            ->whereMonth('tanggal', $bulan)
-            ->whereYear('tanggal', $tahun)
-            ->get();
+        $request->validate([
+            'karyawan_id' => 'nullable|exists:karyawan,id',
+            'tanggal' => 'nullable|date',
+        ]);
 
-        return response()->json($jadwal);
+        $query = KaryawanShift::with(['karyawan', 'shift']);
+
+        if ($request->karyawan_id) {
+            $query->where('karyawan_id', $request->karyawan_id);
+        }
+
+        if ($request->tanggal) {
+            $query->where('tanggal', $request->tanggal);
+        }
+
+        return response()->json($query->get());
     }
 }

@@ -594,7 +594,7 @@
         document.getElementById('loadingOverlay').style.display = 'block';
 
         $.ajax({
-            url: '{{ route("karyawan_shift.bulkStore") }}',
+            url: '{{ route("karyawan_shift.bulk") }}',
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',

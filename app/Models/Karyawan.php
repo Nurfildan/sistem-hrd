@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Karyawan extends Model
 {
@@ -24,7 +24,15 @@ class Karyawan extends Model
         'foto',
     ];
 
-    /** RELATIONS */
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
+
+    public function user()
+    {
+        return $this->hasOne(User::class);
+    }
+
     public function jabatan()
     {
         return $this->belongsTo(Jabatan::class);
@@ -35,14 +43,14 @@ class Karyawan extends Model
         return $this->belongsTo(Departemen::class);
     }
 
-    public function Shift()
-    {
-        return $this->hasMany(Shift::class);
-    }
-    
     public function absensi()
     {
         return $this->hasMany(Absensi::class);
+    }
+
+    public function cuti()
+    {
+        return $this->hasMany(Cuti::class);
     }
 
     public function penggajian()
@@ -50,8 +58,12 @@ class Karyawan extends Model
         return $this->hasMany(Penggajian::class);
     }
 
-    public function user()
+    public function shift()
     {
-        return $this->hasOne(User::class);
+        return $this->belongsToMany(
+            Shift::class,
+            'karyawan_shift'
+        )->withPivot('tanggal')
+         ->withTimestamps();
     }
 }

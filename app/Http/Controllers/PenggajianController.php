@@ -2,104 +2,137 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Karyawan;
 use App\Models\Penggajian;
+use App\Models\Karyawan;
 use App\Models\Absensi;
 use App\Models\AturanPotonganJabatan;
 use Carbon\Carbon;
-use DB;
+use Illuminate\Http\Request;
 
 class PenggajianController extends Controller
 {
     /**
-     * INDEX → tampil berdasarkan periode
+     * List penggajian
+     * HRD: semua
      */
     public function index(Request $request)
     {
-        $periode = $request->get('periode', now()->format('Y-m'));
+        // Default periode = bulan sekarang
+        $periode = $request->periode ?? now()->format('Y-m');
 
-        $penggajian = Penggajian::with('karyawan.jabatan')
+        $penggajian = Penggajian::with('karyawan')
             ->where('periode', $periode)
-            ->orderBy('karyawan_id')
+            ->orderBy('periode', 'desc')
             ->get();
 
         return view('penggajian.index', compact('penggajian', 'periode'));
     }
 
+
     /**
-     * GENERATE GAJI BULANAN (1 tombol)
+     * Generate gaji bulanan
+     * (HRD only)
      */
     public function generateBulanan(Request $request)
     {
         $request->validate([
-            'periode' => 'required|date_format:Y-m'
+            'periode' => 'required', // contoh: 2026-02
         ]);
 
         $periode = $request->periode;
-        $bulan = Carbon::createFromFormat('Y-m', $periode)->month;
-        $tahun = Carbon::createFromFormat('Y-m', $periode)->year;
+        $tanggalGaji = Carbon::now()->toDateString();
 
-        DB::transaction(function () use ($periode, $bulan, $tahun) {
+        $karyawanList = Karyawan::with('jabatan')->get();
 
-            $karyawans = Karyawan::with('jabatan')->get();
+        foreach ($karyawanList as $karyawan) {
 
-            foreach ($karyawans as $karyawan) {
+            // Cegah double generate
+            $exists = Penggajian::where('karyawan_id', $karyawan->id)
+                ->where('periode', $periode)
+                ->first();
 
-                $aturan = AturanPotonganJabatan::where('jabatan_id', $karyawan->jabatan_id)->first();
-                if (!$aturan) continue;
-
-                $absensis = Absensi::where('karyawan_id', $karyawan->id)
-                    ->whereMonth('tanggal', $bulan)
-                    ->whereYear('tanggal', $tahun)
-                    ->get();
-
-                $potonganOtomatis = 0;
-
-                foreach ($absensis as $absen) {
-                    $potonganOtomatis += match ($absen->status) {
-                        'Hadir' => $aturan->potongan_hadir,
-                        'Terlambat' => $aturan->potongan_terlambat,
-                        'Izin' => $aturan->potongan_izin,
-                        'Sakit' => $aturan->potongan_sakit,
-                        'Alpa' => $aturan->potongan_alpa,
-                        'Cuti' => $aturan->potongan_cuti,
-                        default => 0
-                    };
-                }
-
-                $gajiPokok = $karyawan->jabatan->gaji_pokok;
-                $tunjangan = $karyawan->jabatan->tunjangan;
-
-                Penggajian::updateOrCreate(
-                    [
-                        'karyawan_id' => $karyawan->id,
-                        'periode' => $periode
-                    ],
-                    [
-                        'tanggal_penggajian' => now(),
-                        'gaji_pokok' => $gajiPokok,
-                        'tunjangan' => $tunjangan,
-                        'potongan_otomatis' => $potonganOtomatis,
-                        'potongan_tambahan' => 0,
-                        'total_gaji' => ($gajiPokok + $tunjangan) - $potonganOtomatis,
-                        'status_pembayaran' => 'Belum Dibayar'
-                    ]
-                );
+            if ($exists) {
+                continue;
             }
-        });
 
-        return redirect()
-            ->route('penggajian.index', ['periode' => $periode])
-            ->with('success', 'Penggajian berhasil digenerate');
+            // ===== Gaji dasar =====
+            $gajiPokok = $karyawan->jabatan->gaji_pokok ?? 0;
+            $tunjangan = $karyawan->jabatan->tunjangan ?? 0;
+
+            // ===== Hitung potongan otomatis dari absensi =====
+            $potonganOtomatis = $this->hitungPotonganAbsensi($karyawan, $periode);
+
+            $totalGaji = ($gajiPokok + $tunjangan) - $potonganOtomatis;
+
+            Penggajian::create([
+                'karyawan_id' => $karyawan->id,
+                'periode' => $periode,
+                'tanggal_penggajian' => $tanggalGaji,
+                'gaji_pokok' => $gajiPokok,
+                'tunjangan' => $tunjangan,
+                'potongan_otomatis' => $potonganOtomatis,
+                'potongan_tambahan' => 0,
+                'total_gaji' => $totalGaji,
+                'status_pembayaran' => 'Belum Dibayar',
+            ]);
+        }
+
+        return back()->with('success', 'Penggajian berhasil digenerate.');
     }
 
     /**
-     * DETAIL GAJI (1 karyawan, 1 bulan)
+     * Detail penggajian
      */
     public function show($id)
     {
-        $penggajian = Penggajian::with(['karyawan.jabatan', 'potongan'])->findOrFail($id);
+        $penggajian = Penggajian::with([
+            'karyawan.jabatan',
+            'potongan'
+        ])->findOrFail($id);
+
         return view('penggajian.show', compact('penggajian'));
+    }
+
+    /**
+     * Hitung potongan otomatis berdasarkan absensi
+     */
+    private function hitungPotonganAbsensi($karyawan, $periode)
+    {
+        [$tahun, $bulan] = explode('-', $periode);
+
+        $absensi = Absensi::where('karyawan_id', $karyawan->id)
+            ->whereYear('tanggal', $tahun)
+            ->whereMonth('tanggal', $bulan)
+            ->get();
+
+        $aturan = AturanPotonganJabatan::where('jabatan_id', $karyawan->jabatan_id)->first();
+
+        if (!$aturan) {
+            return 0;
+        }
+
+        $total = 0;
+
+        foreach ($absensi as $a) {
+            switch ($a->status) {
+                case 'Terlambat':
+                    $total += $aturan->potongan_terlambat;
+                    break;
+                case 'Izin':
+                    $total += $aturan->potongan_izin;
+                    break;
+                case 'Sakit':
+                    $total += $aturan->potongan_sakit;
+                    break;
+                case 'Alpa':
+                    $total += $aturan->potongan_alpa;
+                    break;
+                case 'Cuti':
+                    $total += $aturan->potongan_cuti;
+                    break;
+            }
+        }
+
+        return $total;
     }
 }

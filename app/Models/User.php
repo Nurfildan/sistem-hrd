@@ -2,56 +2,62 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
-    /**
-     * Kolom yang bisa diisi massal.
-     */
     protected $fillable = [
+        'karyawan_id',
         'name',
         'email',
         'password',
         'role',
-        'karyawan_id',
     ];
 
-    /**
-     * Kolom yang disembunyikan dari array/json.
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Casting otomatis tipe data.
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
 
-    /**
-     * Relasi ke tabel karyawan.
-     */
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class);
     }
 
-    /**
-     * Cek role user (Admin, HRD, Karyawan).
-     */
-    public function hasRole($role)
+    public function absensiDiubah()
     {
-        return $this->role === $role;
+        return $this->hasMany(Absensi::class, 'updated_by');
+    }
+
+    public function cutiDisetujui()
+    {
+        return $this->hasMany(Cuti::class, 'approved_by');
+    }
+
+    /* =====================
+     | HELPER
+     ===================== */
+
+    public function isAdmin()
+    {
+        return $this->role === 'Admin';
+    }
+
+    public function isHRD()
+    {
+        return $this->role === 'HRD';
+    }
+
+    public function isKaryawan()
+    {
+        return $this->role === 'Karyawan';
     }
 }

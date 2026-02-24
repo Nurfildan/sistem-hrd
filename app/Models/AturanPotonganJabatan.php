@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class AturanPotonganJabatan extends Model
 {
@@ -21,25 +21,12 @@ class AturanPotonganJabatan extends Model
         'potongan_cuti',
     ];
 
-    /** RELATIONS */
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
+
     public function jabatan()
     {
         return $this->belongsTo(Jabatan::class);
-    }
-
-    /**
-     * Helper untuk ambil potongan berdasarkan status absensi
-     */
-    public function getPotonganByStatus(string $status): float
-    {
-        return match ($status) {
-            'Hadir'      => $this->potongan_hadir,
-            'Terlambat'  => $this->potongan_terlambat,
-            'Izin'       => $this->potongan_izin,
-            'Sakit'      => $this->potongan_sakit,
-            'Alpa'       => $this->potongan_alpa,
-            'Cuti'       => $this->potongan_cuti,
-            default      => 0,
-        };
     }
 }

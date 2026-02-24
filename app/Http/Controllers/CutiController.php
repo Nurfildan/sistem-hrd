@@ -4,207 +4,144 @@ namespace App\Http\Controllers;
 
 use App\Models\Cuti;
 use App\Models\Karyawan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CutiController extends Controller
 {
     /**
-     * Tampilkan daftar cuti
+     * List cuti
+     * - HRD: semua karyawan
+     * - Karyawan: milik sendiri
      */
     public function index(Request $request)
     {
         $user = Auth::user();
-        
-        $query = Cuti::with(['karyawan']);
 
-        // Filter berdasarkan role
+        $karyawanList = collect();
+
+        $query = Cuti::with('karyawan')
+            ->orderBy('created_at', 'desc');
+
+        // Kalau Karyawan → hanya milik sendiri
         if ($user->role === 'Karyawan') {
-            $karyawan = $user->karyawan;
-            
-            if (!$karyawan) {
-                return redirect()->route('dashboard')
-                    ->with('error', 'Data karyawan Anda belum terdaftar.');
-            }
-            
-            $query->where('karyawan_id', $karyawan->id);
+            $query->where('karyawan_id', $user->karyawan_id);
         }
 
-        // HRD bisa lihat semua cuti dengan filter
+        // Filter khusus HRD
         if ($user->role === 'HRD') {
-            if ($request->filled('karyawan_id')) {
+
+            if ($request->karyawan_id) {
                 $query->where('karyawan_id', $request->karyawan_id);
             }
 
-            if ($request->filled('status')) {
+            if ($request->status) {
                 $query->where('status', $request->status);
             }
-        }
 
-        $cuti = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        // Data untuk filter (hanya HRD)
-        $karyawanList = [];
-        if ($user->role === 'HRD') {
             $karyawanList = Karyawan::orderBy('nama')->get();
         }
+
+        $cuti = $query->paginate(10);
 
         return view('cuti.index', compact('cuti', 'karyawanList'));
     }
 
+
     /**
-     * Form pengajuan cuti (Karyawan)
+     * Form pengajuan cuti (KHUSUS KARYAWAN)
      */
     public function create()
     {
-        $user = Auth::user();
-        
-        if ($user->role !== 'Karyawan') {
-            return redirect()->route('cuti.index')
-                ->with('error', 'Hanya karyawan yang bisa mengajukan cuti');
-        }
-
         return view('cuti.create');
     }
 
     /**
-     * Simpan pengajuan cuti (Karyawan)
+     * Simpan pengajuan cuti (KHUSUS KARYAWAN)
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-        $karyawan = $user->karyawan;
-
-        if (!$karyawan) {
-            return back()->with('error', 'Data karyawan belum tersedia.');
-        }
-
         $request->validate([
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'keterangan' => 'required|string|max:500'
+            'keterangan' => 'nullable|string',
         ]);
 
         Cuti::create([
-            'karyawan_id' => $karyawan->id,
+            'karyawan_id' => Auth::user()->karyawan_id,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
             'keterangan' => $request->keterangan,
-            'status' => 'Menunggu'
+            'status' => 'Menunggu',
         ]);
 
         return redirect()->route('cuti.index')
-            ->with('success', 'Pengajuan cuti berhasil diajukan');
+            ->with('success', 'Pengajuan cuti berhasil dikirim.');
     }
 
     /**
-     * Detail cuti
+     * Detail cuti (HRD & Karyawan)
      */
-    public function show($id)
+    public function show(Cuti $cuti)
     {
-        $user = Auth::user();
-        $cuti = Cuti::with('karyawan')->findOrFail($id);
-
-        // Karyawan hanya bisa lihat cuti sendiri
-        if ($user->role === 'Karyawan' && $cuti->karyawan_id !== $user->karyawan->id) {
-            abort(403, 'Anda tidak memiliki akses');
-        }
+        $this->authorizeAccess($cuti);
 
         return view('cuti.show', compact('cuti'));
     }
 
     /**
-     * Form edit cuti (HRD)
+     * Form edit cuti (KHUSUS HRD)
      */
-    public function edit($id)
+    public function edit(Cuti $cuti)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'HRD') {
-            return redirect()->route('cuti.index')
-                ->with('error', 'Anda tidak memiliki akses');
-        }
-
-        $cuti = Cuti::with('karyawan')->findOrFail($id);
-        $karyawanList = Karyawan::orderBy('nama')->get();
-
-        return view('cuti.edit', compact('cuti', 'karyawanList'));
+        return view('cuti.edit', compact('cuti'));
     }
 
     /**
-     * Update cuti (HRD)
+     * Update data cuti (KHUSUS HRD)
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Cuti $cuti)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'HRD') {
-            return redirect()->route('cuti.index')
-                ->with('error', 'Anda tidak memiliki akses');
-        }
-
         $request->validate([
-            'karyawan_id' => 'required|exists:karyawan,id',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'keterangan' => 'required|string|max:500',
-            'status' => 'required|in:Menunggu,Disetujui,Ditolak'
+            'status' => 'required|in:Menunggu,Disetujui,Ditolak',
+            'keterangan' => 'nullable|string',
         ]);
 
-        $cuti = Cuti::findOrFail($id);
         $cuti->update([
-            'karyawan_id' => $request->karyawan_id,
             'tanggal_mulai' => $request->tanggal_mulai,
             'tanggal_selesai' => $request->tanggal_selesai,
+            'status' => $request->status,
             'keterangan' => $request->keterangan,
-            'status' => $request->status
         ]);
 
         return redirect()->route('cuti.index')
-            ->with('success', 'Data cuti berhasil diupdate');
+            ->with('success', 'Data cuti berhasil diperbarui.');
     }
 
     /**
-     * Hapus cuti (HRD)
+     * Hapus cuti (KHUSUS HRD)
      */
-    public function destroy($id)
+    public function destroy(Cuti $cuti)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'HRD') {
-            return redirect()->route('cuti.index')
-                ->with('error', 'Anda tidak memiliki akses');
-        }
-
-        $cuti = Cuti::findOrFail($id);
         $cuti->delete();
 
-        return redirect()->route('cuti.index')
-            ->with('success', 'Data cuti berhasil dihapus');
+        return back()->with('success', 'Data cuti berhasil dihapus.');
     }
 
     /**
-     * Update status cuti (HRD)
+     * Guard sederhana:
+     * Karyawan hanya boleh lihat milik sendiri
      */
-    public function updateStatus(Request $request, $id)
+    private function authorizeAccess(Cuti $cuti)
     {
-        $user = Auth::user();
-
-        if ($user->role !== 'HRD') {
-            return redirect()->route('cuti.index')
-                ->with('error', 'Anda tidak memiliki akses');
+        if (
+            Auth::user()->role === 'Karyawan' &&
+            Auth::user()->karyawan_id !== $cuti->karyawan_id
+        ) {
+            abort(403, 'Akses ditolak');
         }
-
-        $request->validate([
-            'status' => 'required|in:Disetujui,Ditolak'
-        ]);
-
-        $cuti = Cuti::findOrFail($id);
-        $cuti->update([
-            'status' => $request->status
-        ]);
-
-        return redirect()->route('cuti.index')
-            ->with('success', 'Status cuti berhasil diupdate');
     }
 }

@@ -6,13 +6,7 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-user-plus"></i> Buat User Baru
-        </h1>
-        <a href="{{ route('users.index') }}" class="btn btn-secondary btn-icon-split shadow-sm">
-            <span class="icon text-white-50">
-                <i class="fas fa-arrow-left"></i>
-            </span>
-            <span class="text">Kembali</span>
-        </a>
+        </h1>        
     </div>
 
     <div class="row">
@@ -28,7 +22,7 @@
 
                 <!-- Card Body -->
                 <div class="card-body">
-                    <form action="{{ route('users.store') }}" method="POST">
+                    <form action="{{ route('admin.users.store') }}" method="POST">
                         @csrf
 
                         <!-- Karyawan -->
@@ -97,13 +91,24 @@
                             @enderror
                         </div>
 
+                        <div class="form-group mt-3">
+                            <label class="font-weight-bold">
+                                Konfirmasi Password <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" 
+                                name="password_confirmation" 
+                                class="form-control"
+                                placeholder="Ulangi password"
+                                required>
+                        </div>
+
                         <hr class="my-4">
 
                         <!-- Buttons -->
-                        <div class="form-group text-right">
-                            <a href="{{ route('users.index') }}" class="btn btn-secondary">
+                        <div class="form-group text-right">         
+                            <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">
                                 <i class="fas fa-times"></i> Batal
-                            </a>
+                            </a>                   
                             <button type="reset" class="btn btn-warning">
                                 <i class="fas fa-redo"></i> Reset
                             </button>

@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Absensi extends Model
 {
@@ -18,9 +18,19 @@ class Absensi extends Model
         'jam_masuk',
         'jam_keluar',
         'status',
+        'terlambat_menit',
+        'sumber',
+        'updated_by',
     ];
 
-    /** RELATIONS */
+    protected $casts = [
+        'tanggal' => 'date',                
+    ];
+
+    /* =====================
+     | RELATIONSHIP
+     ===================== */
+
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class);
@@ -29,5 +39,10 @@ class Absensi extends Model
     public function shift()
     {
         return $this->belongsTo(Shift::class);
+    }
+
+    public function editor()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }

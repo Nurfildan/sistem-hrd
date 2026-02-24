@@ -9,96 +9,100 @@ use Illuminate\Http\Request;
 
 class KaryawanController extends Controller
 {
+    /**
+     * Tampilkan daftar karyawan
+     */
     public function index()
     {
         $karyawan = Karyawan::with(['jabatan', 'departemen'])->get();
         return view('karyawan.index', compact('karyawan'));
     }
 
+    /**
+     * Form tambah karyawan
+     */
     public function create()
     {
         $jabatan = Jabatan::all();
         $departemen = Departemen::all();
+
         return view('karyawan.create', compact('jabatan', 'departemen'));
     }
 
+    /**
+     * Simpan data karyawan
+     */
     public function store(Request $request)
-{
-    $request->validate([
-        'nip' => 'required|unique:karyawan,nip',
-        'nama' => 'required',
-        'jabatan_id' => 'required',
-        'departemen_id' => 'required',
-        'tgl_masuk' => 'required|date',
-        'status' => 'required',
-        'email' => 'nullable|email',
-        'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
-    ]);
+    {
+        $request->validate([
+            'nip' => 'required|unique:karyawan,nip',
+            'nama' => 'required',
+            'jabatan_id' => 'required',
+            'departemen_id' => 'required',
+            'tgl_masuk' => 'required|date',
+            'status' => 'required',
+        ]);
 
-    $data = $request->all();
+        Karyawan::create($request->all());
 
-    // Upload Foto
-    if ($request->hasFile('foto')) {
-        $file = $request->file('foto');
-        $namaFile = time() . '_' . $file->getClientOriginalName();
-        $file->move(public_path('foto_karyawan'), $namaFile);
-        $data['foto'] = $namaFile;
+        return redirect()
+            ->route('karyawan.index')
+            ->with('success', 'Karyawan berhasil ditambahkan');
     }
 
-    // SIMPAN DATA
-    Karyawan::create($data);
-
-    return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil ditambahkan');
-}
-
-
-    public function edit(Karyawan $karyawan)
+    /**
+     * Detail karyawan
+     */
+    public function show($id)
     {
+        $karyawan = Karyawan::with(['jabatan', 'departemen'])->findOrFail($id);
+        return view('karyawan.show', compact('karyawan'));
+    }
+
+    /**
+     * Form edit karyawan
+     */
+    public function edit($id)
+    {
+        $karyawan = Karyawan::findOrFail($id);
         $jabatan = Jabatan::all();
         $departemen = Departemen::all();
+
         return view('karyawan.edit', compact('karyawan', 'jabatan', 'departemen'));
     }
 
-    public function update(Request $request, Karyawan $karyawan)
-{
-    $request->validate([
-        'nip' => 'required|unique:karyawan,nip,' . $karyawan->id,
-        'nama' => 'required',
-        'jabatan_id' => 'required',
-        'departemen_id' => 'required',
-        'tgl_masuk' => 'required|date',
-        'status' => 'required',
-        'email' => 'nullable|email',
-        'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
-    ]);
+    /**
+     * Update data karyawan
+     */
+    public function update(Request $request, $id)
+    {
+        $karyawan = Karyawan::findOrFail($id);
 
-    $data = $request->all();
+        $request->validate([
+            'nip' => 'required|unique:karyawan,nip,' . $karyawan->id,
+            'nama' => 'required',
+            'jabatan_id' => 'required',
+            'departemen_id' => 'required',
+            'tgl_masuk' => 'required|date',
+            'status' => 'required',
+        ]);
 
-    // Jika upload foto baru
-    if ($request->hasFile('foto')) {
+        $karyawan->update($request->all());
 
-        // Hapus foto lama
-        if ($karyawan->foto && file_exists(public_path('foto_karyawan/' . $karyawan->foto))) {
-            unlink(public_path('foto_karyawan/' . $karyawan->foto));
-        }
-
-        $file = $request->file('foto');
-        $namaFile = time() . '_' . $file->getClientOriginalName();
-        $file->move(public_path('foto_karyawan'), $namaFile);
-
-        $data['foto'] = $namaFile;
+        return redirect()
+            ->route('karyawan.index')
+            ->with('success', 'Data karyawan berhasil diperbarui');
     }
 
-    // UPDATE DATA
-    $karyawan->update($data);
-
-    return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil diperbarui');
-}
-
-
-    public function destroy(Karyawan $karyawan)
+    /**
+     * Hapus karyawan
+     */
+    public function destroy($id)
     {
-        $karyawan->delete();
-        return redirect()->route('karyawan.index')->with('success', 'Data karyawan berhasil dihapus');
+        Karyawan::findOrFail($id)->delete();
+
+        return redirect()
+            ->route('karyawan.index')
+            ->with('success', 'Karyawan berhasil dihapus');
     }
 }

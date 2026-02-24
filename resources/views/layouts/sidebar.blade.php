@@ -1,7 +1,7 @@
 <!-- Sidebar -->
 <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-    <!-- Sidebar - Brand -->
+    <!-- Brand -->
     <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('dashboard') }}">
         <div class="sidebar-brand-icon rotate-n-15">
             <i class="fas fa-laugh-wink"></i>
@@ -21,9 +21,7 @@
 
     <hr class="sidebar-divider">
 
-    {{-- ===============================
-        ADMIN ONLY
-    ================================== --}}
+    {{-- ================= ADMIN ================= --}}
     @if(auth()->user()->role === 'Admin')
 
         <div class="sidebar-heading">Admin Area</div>
@@ -31,54 +29,69 @@
         <!-- Master Data -->
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAdminMaster">
-                <i class="fas fa-fw fa-database"></i>
+                <i class="fas fa-database"></i>
                 <span>Master Data</span>
             </a>
             <div id="collapseAdminMaster" class="collapse">
                 <div class="bg-white py-2 collapse-inner rounded">
-                    <a class="collapse-item" href="{{ route('jabatan.index') }}">Jabatan</a>
-                    <a class="collapse-item" href="{{ route('departemen.index') }}">Departemen</a>
+                    <a class="collapse-item" href="{{ route('admin.jabatan.index') }}">Jabatan</a>
+                    <a class="collapse-item" href="{{ route('admin.departemen.index') }}">Departemen</a>
+                    <a class="collapse-item" href="{{ route('karyawan.index') }}">Data Karyawan</a>
+                    <a class="collapse-item" href="{{ route('admin.users.index') }}">Kelola Users</a>
+                </div>
+            </div>
+        </li>        
+
+        <!-- Laporan -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseLaporan">
+                <i class="fas fa-file-alt"></i>
+                <span>Laporan</span>
+            </a>
+            <div id="collapseLaporan" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ route('admin.laporan.absensi') }}">Laporan Absensi</a>
+                    <a class="collapse-item" href="{{ route('admin.laporan.cuti') }}">Laporan Cuti</a>
+                    <a class="collapse-item" href="{{ route('admin.laporan.penggajian') }}">Laporan Penggajian</a>
                 </div>
             </div>
         </li>
 
-        <!-- User Management -->
-        <li class="nav-item {{ request()->is('users*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('users.index') }}">
-                <i class="fas fa-users-cog"></i>
-                <span>Kelola Users</span>
-            </a>
-        </li>
-
         <!-- System -->
         <li class="nav-item">
-            <a class="nav-link" href="#">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSystem">
                 <i class="fas fa-tools"></i>
-                <span>Backup & Pengaturan</span>
+                <span>System</span>
             </a>
+            <div id="collapseSystem" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" href="{{ route('admin.system.settings') }}">Pengaturan Sistem</a>
+                    <form action="{{ route('admin.system.backup') }}" method="POST">
+                        @csrf
+                        <button class="collapse-item btn btn-link p-0 text-left">
+                            Backup Database
+                        </button>
+                    </form>
+                </div>
+            </div>
         </li>
 
         <hr class="sidebar-divider">
-
     @endif
 
 
-    {{-- ===============================
-        HRD ONLY
-    ================================== --}}
+    {{-- ================= HRD ================= --}}
     @if(auth()->user()->role === 'HRD')
 
         <div class="sidebar-heading">HRD Area</div>
 
-        <!-- Data Karyawan -->
-        <li class="nav-item {{ request()->is('karyawan') || request()->is('karyawan/*') ? 'active' : '' }}">
+        <li class="nav-item {{ request()->is('karyawan*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('karyawan.index') }}">
                 <i class="fas fa-id-card-alt"></i>
                 <span>Data Karyawan</span>
             </a>
         </li>
 
-        <!-- Absensi - TAMBAHKAN CLASS ACTIVE -->
         <li class="nav-item {{ request()->is('absensi*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('absensi.index') }}">
                 <i class="fas fa-clock"></i>
@@ -86,7 +99,6 @@
             </a>
         </li>
 
-        <!-- Shift -->
         <li class="nav-item">
             <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseShift">
                 <i class="fas fa-calendar"></i>
@@ -100,7 +112,6 @@
             </div>
         </li>
 
-        <!-- Cuti Approval - TAMBAHKAN CLASS ACTIVE -->
         <li class="nav-item {{ request()->is('cuti*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('cuti.index') }}">
                 <i class="fas fa-file-signature"></i>
@@ -108,67 +119,51 @@
             </a>
         </li>
 
-        <!-- Penggajian -->
         <li class="nav-item {{ request()->is('penggajian*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('penggajian.index') }}">
                 <i class="fas fa-money-check-alt"></i>
                 <span>Penggajian</span>
             </a>
         </li>
-        
-        <!-- Aturan Potongan -->
+
         <li class="nav-item {{ request()->is('aturan-potongan*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('aturan-potongan.index') }}">
                 <i class="fas fa-cut"></i>
                 <span>Aturan Potongan</span>
             </a>
         </li>
-        <hr class="sidebar-divider">
 
+        <hr class="sidebar-divider">
     @endif
 
 
-    {{-- ===============================
-        KARYAWAN ONLY
-    ================================== --}}
+    {{-- ================= KARYAWAN ================= --}}
     @if(auth()->user()->role === 'Karyawan')
 
         <div class="sidebar-heading">Menu Karyawan</div>
 
         <li class="nav-item {{ request()->is('absensi*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('absensi.index') }}">
-                <i class="fas fa-fw fa-clock"></i>
+                <i class="fas fa-clock"></i>
                 <span>Absensi</span>
             </a>
         </li>
 
         <li class="nav-item {{ request()->is('cuti*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('cuti.index') }}">
-                <i class="fas fa-fw fa-calendar-alt"></i>
+                <i class="fas fa-calendar-alt"></i>
                 <span>Pengajuan Cuti</span>
             </a>
         </li>
 
         <li class="nav-item {{ request()->is('profile*') ? 'active' : '' }}">
             <a class="nav-link" href="{{ route('profile.index') }}">
-                <i class="fas fa-fw fa-user"></i>
+                <i class="fas fa-user"></i>
                 <span>Profilku</span>
             </a>
         </li>
 
         <hr class="sidebar-divider">
-
-    @endif
-
-
-    <!-- Logout -->
-    <li class="nav-item mt-3">
-        <form action="{{ route('logout') }}" method="post">
-            @csrf
-            <button type="submit" class="btn btn-danger btn-sm mx-3">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </button>
-        </form>
-    </li>
+    @endif    
 
 </ul>

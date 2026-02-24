@@ -8,7 +8,7 @@
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-users"></i> Data User
         </h1>
-        <a href="{{ route('users.create') }}" class="btn btn-primary btn-icon-split shadow-sm">
+        <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-icon-split shadow-sm">
             <span class="icon text-white-50">
                 <i class="fas fa-plus"></i>
             </span>
@@ -62,14 +62,14 @@
                             <!-- Aksi -->
                             <td class="text-center">
 
-                                <a href="{{ route('users.edit', $u->id) }}"
+                                <a href="{{ route('admin.users.edit', $u->id) }}"
                                    class="btn btn-warning btn-sm"
                                    data-toggle="tooltip"
                                    title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
 
-                                <form action="{{ route('users.destroy', $u->id) }}"
+                                <form action="{{ route('admin.users.destroy', $u->id) }}"
                                       method="POST"
                                       class="d-inline"
                                       onsubmit="return confirm('Hapus user ini?')">
@@ -87,7 +87,7 @@
                             <td colspan="6" class="text-center py-4">
                                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                 <p class="text-muted">Belum ada data user</p>
-                                <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">
+                                <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus"></i> Tambah User Pertama
                                 </a>
                             </td>

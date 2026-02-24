@@ -6,13 +6,7 @@
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
         <h1 class="h3 mb-0 text-gray-800">
             <i class="fas fa-plus-circle"></i> Tambah Jabatan Baru
-        </h1>
-        <a href="{{ route('jabatan.index') }}" class="btn btn-secondary btn-icon-split shadow-sm">
-            <span class="icon text-white-50">
-                <i class="fas fa-arrow-left"></i>
-            </span>
-            <span class="text">Kembali</span>
-        </a>
+        </h1>        
     </div>
 
     <div class="row">
@@ -25,7 +19,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form action="{{ route('jabatan.store') }}" method="POST">
+                    <form action="{{ route('admin.jabatan.store') }}" method="POST">
                         @csrf
 
                         <div class="form-group">
@@ -67,6 +61,9 @@
                         <hr>
 
                         <div class="text-right">
+                            <a href="{{ route('admin.jabatan.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Batal
+                            </a>
                             <button type="reset" class="btn btn-warning">
                                 <i class="fas fa-redo"></i> Reset
                             </button>
